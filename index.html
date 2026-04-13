@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Counseling Office Schedule Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-hover: #475569;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-dim: rgba(59,130,246,0.15);
+  --success: #22c55e;
+  --warning: #eab308;
+  --danger: #ef4444;
+  --danger-dim: rgba(239,68,68,0.2);
+  --border: #334155;
+  --border-light: #475569;
+  --radius: 8px;
+  --radius-sm: 4px;
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+  --gap-red: rgba(239,68,68,0.35);
+  --gap-yellow: rgba(234,179,8,0.25);
+  --gap-green: rgba(34,197,94,0.15);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+/* Header */
+.header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.header h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--bg-hover); }
+.btn-primary { background: var(--accent); border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-danger { background: var(--danger); border-color: var(--danger); }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+
+/* Program Tabs */
+.program-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 24px 0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  flex-wrap: nowrap;
+}
+.program-tab {
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: transparent;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.program-tab:hover { color: var(--text-primary); background: var(--bg-tertiary); }
+.program-tab.active {
+  color: var(--accent);
+  background: var(--bg-primary);
+  border-color: var(--border);
+}
+
+/* Term + View Tabs */
+.sub-nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 24px;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.tab-group {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+.tab-btn {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text-primary); }
+.tab-btn.active { color: var(--text-primary); background: var(--accent); }
+.tab-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Main Content */
+.main { padding: 20px 24px; }
+.view-container { display: none; }
+.view-container.active { display: block; }
+
+/* Individual View */
+.individual-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.individual-controls select, .individual-controls input {
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+.individual-controls select { min-width: 220px; }
+.hours-display {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-left: auto;
+}
+
+/* Quick Fill */
+.quick-fill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.quick-fill label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.quick-fill select, .quick-fill input[type="time"] {
+  padding: 5px 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+.quick-fill .day-checks {
+  display: flex;
+  gap: 8px;
+}
+.quick-fill .day-checks label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: none;
+  cursor: pointer;
+}
+.quick-fill .day-checks input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+/* Schedule Grid */
+.grid-wrapper {
+  display: flex;
+  gap: 0;
+}
+.schedule-grid {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+  table-layout: fixed;
+}
+.schedule-grid th {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-weight: 600;
+  padding: 8px 4px;
+  text-align: center;
+  border: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.schedule-grid td {
+  border: 1px solid var(--border);
+  padding: 2px 4px;
+  height: 28px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.1s;
+  position: relative;
+  vertical-align: middle;
+}
+.schedule-grid td:hover { background: var(--bg-hover); }
+.schedule-grid td.time-label {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-weight: 500;
+  cursor: default;
+  width: 80px;
+  text-align: right;
+  padding-right: 8px;
+}
+.schedule-grid td.time-label:hover { background: var(--bg-secondary); }
+.schedule-grid td.filled {
+  font-weight: 600;
+  font-size: 11px;
+}
+.schedule-grid td.remote-slot {
+  font-style: italic;
+}
+.schedule-grid td .remote-badge {
+  font-size: 9px;
+  color: var(--warning);
+  font-weight: 400;
+}
+.schedule-grid .comment-col {
+  width: 180px;
+  vertical-align: top;
+  cursor: default;
+}
+.schedule-grid .comment-col:hover { background: transparent; }
+.comment-textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 60px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 11px;
+  padding: 6px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+/* Cell Popup */
+.cell-popup {
+  position: fixed;
+  z-index: 100;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 10px;
+  box-shadow: var(--shadow);
+  display: none;
+  min-width: 200px;
+}
+.cell-popup.show { display: block; }
+.cell-popup select, .cell-popup input {
+  width: 100%;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+.cell-popup .popup-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.cell-popup .popup-row label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.cell-popup .popup-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+/* Master View */
+.master-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.master-section { margin-bottom: 24px; }
+.master-section h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+  padding: 6px 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+}
+.schedule-grid td.master-cell {
+  padding: 2px;
+  vertical-align: top;
+  cursor: default;
+  height: auto;
+  min-height: 28px;
+}
+.schedule-grid td.master-cell:hover { background: var(--bg-tertiary); }
+.staff-chip {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  margin: 1px;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.more-chip {
+  display: inline-block;
+  padding: 1px 4px;
+  font-size: 9px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+/* Gap Analysis */
+.gap-summary {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.gap-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 18px;
+  min-width: 160px;
+}
+.gap-card .gap-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.gap-card .gap-value {
+  font-size: 22px;
+  font-weight: 700;
+}
+.gap-card .gap-value.danger { color: var(--danger); }
+.gap-card .gap-value.warning { color: var(--warning); }
+.gap-card .gap-value.success { color: var(--success); }
+.schedule-grid td.gap-none {
+  background: var(--gap-red) !important;
+}
+.schedule-grid td.gap-single {
+  background: var(--gap-yellow) !important;
+}
+.schedule-grid td.gap-covered {
+  background: var(--gap-green) !important;
+}
+.gap-count {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+}
+.modal h2 {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+}
+.modal-close {
+  float: right;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 20px;
+  cursor: pointer;
+}
+.modal-close:hover { color: var(--text-primary); }
+.staff-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.staff-list-item .staff-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.staff-list-item .staff-name {
+  flex: 1;
+  font-size: 13px;
+}
+.staff-list-item .staff-type-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--bg-tertiary);
+}
+.staff-type-badge.type-c { color: var(--accent); }
+.staff-type-badge.type-s { color: var(--success); }
+.add-staff-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.add-staff-row input, .add-staff-row select {
+  padding: 6px 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+.add-staff-row input { flex: 1; }
+
+/* Scrollable grid container */
+.grid-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* Print styles */
+@media print {
+  body { background: white; color: black; }
+  .header, .program-tabs, .sub-nav, .quick-fill, .header-actions,
+  .individual-controls, .master-toggle, .btn, .cell-popup, .modal-overlay { display: none !important; }
+  .view-container { display: block !important; }
+  .schedule-grid th { background: #eee; color: #333; }
+  .schedule-grid td { border-color: #ccc; }
+  .staff-chip { border: 1px solid #ccc; }
+}
+
+/* Location colors for cells */
+.loc-midcity { background: rgba(59,130,246,0.18); color: #93c5fd; }
+.loc-ecc { background: rgba(34,197,94,0.18); color: #86efac; }
+.loc-harborview { background: rgba(168,85,247,0.18); color: #c4b5fd; }
+.loc-cemesa { background: rgba(249,115,22,0.18); color: #fdba74; }
+.loc-cemiramar { background: rgba(236,72,153,0.18); color: #f9a8d4; }
+.loc-westcity { background: rgba(20,184,166,0.18); color: #5eead4; }
+.loc-northcity { background: rgba(234,179,8,0.18); color: #fde047; }
+.schedule-grid td .ol-badge {
+  font-size: 9px; font-weight: 700; color: #fbbf24; margin-left: 2px;
+}
+
+.pdf-rendering { position: absolute; left: -9999px; top: 0; background: #1e293b; padding: 20px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>Counseling Office Schedule Dashboard</h1>
+  <div class="header-actions">
+    <button class="btn" onclick="openStaffModal()">Manage Staff</button>
+    <button class="btn" onclick="importJSON()">Import JSON</button>
+    <button class="btn" onclick="exportJSON()">Export JSON</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
+  </div>
+</div>
+
+<!-- Program Tabs -->
+<div class="program-tabs" id="programTabs"></div>
+
+<!-- Term + View Tabs -->
+<div class="sub-nav">
+  <div>
+    <div class="tab-label">Term</div>
+    <div class="tab-group" id="termTabs"></div>
+  </div>
+  <div>
+    <div class="tab-label">View</div>
+    <div class="tab-group" id="viewTabs">
+      <button class="tab-btn active" data-view="individual" onclick="switchView('individual')">Individual Schedules</button>
+      <button class="tab-btn" data-view="master" onclick="switchView('master')">Master Schedule</button>
+      <button class="tab-btn" data-view="gap" onclick="switchView('gap')">Gap Analysis</button>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+  <!-- Individual View -->
+  <div class="view-container active" id="view-individual">
+    <div class="individual-controls">
+      <select id="staffSelect" onchange="renderIndividualGrid()">
+        <option value="">-- Select Staff Member --</option>
+      </select>
+      <button class="btn btn-sm btn-primary" onclick="exportIndividualPDF()">Export as PDF</button>
+      <div class="hours-display" id="hoursDisplay">Total: 0 hrs/week</div>
+    </div>
+    <div class="quick-fill" id="quickFill">
+      <label>Quick Fill:</label>
+      <select id="qfLocation"></select>
+      <label style="text-transform:none;color:var(--text-secondary);font-size:12px;cursor:pointer">
+        <input type="checkbox" id="qfRemote"> Remote
+      </label>
+      <label style="text-transform:none;color:var(--text-secondary);font-size:12px;cursor:pointer">
+        <input type="checkbox" id="qfOL"> OL
+      </label>
+      <label>From</label>
+      <select id="qfStart"></select>
+      <label>To</label>
+      <select id="qfEnd"></select>
+      <div class="day-checks">
+        <label><input type="checkbox" id="qfMon" checked> Mon</label>
+        <label><input type="checkbox" id="qfTue" checked> Tue</label>
+        <label><input type="checkbox" id="qfWed" checked> Wed</label>
+        <label><input type="checkbox" id="qfThu" checked> Thu</label>
+        <label><input type="checkbox" id="qfFri"> Fri</label>
+      </div>
+      <button class="btn btn-sm btn-primary" onclick="applyQuickFill()">Apply</button>
+      <button class="btn btn-sm" onclick="clearQuickFill()">Clear Range</button>
+    </div>
+    <div class="grid-scroll">
+      <div id="individualGridContainer"></div>
+    </div>
+  </div>
+
+  <!-- Master View -->
+  <div class="view-container" id="view-master">
+    <div class="master-toggle">
+      <button class="tab-btn active" data-master="combined" onclick="switchMasterView('combined')">Combined Overlay</button>
+      <button class="tab-btn" data-master="location" onclick="switchMasterView('location')">Per-Location Breakdown</button>
+      <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="exportMasterPDF()">Export Master as PDF</button>
+    </div>
+    <div id="masterContent"></div>
+  </div>
+
+  <!-- Gap Analysis View -->
+  <div class="view-container" id="view-gap">
+    <div class="gap-summary" id="gapSummary"></div>
+    <div id="gapContent"></div>
+  </div>
+</div>
+
+<!-- Cell Edit Popup -->
+<div class="cell-popup" id="cellPopup">
+  <select id="popupLocation"></select>
+  <div class="popup-row">
+    <label><input type="checkbox" id="popupRemote"> Remote</label>
+    <label><input type="checkbox" id="popupOL"> Overload (OL)</label>
+  </div>
+  <div class="popup-actions">
+    <button class="btn btn-sm" onclick="clearCell()">Clear</button>
+    <button class="btn btn-sm btn-primary" onclick="saveCell()">Save</button>
+  </div>
+</div>
+
+<!-- Staff Management Modal -->
+<div class="modal-overlay" id="staffModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeStaffModal()">&times;</button>
+    <h2>Manage Staff</h2>
+    <div id="staffList"></div>
+    <div class="add-staff-row">
+      <input type="text" id="newStaffName" placeholder="New staff name">
+      <select id="newStaffType">
+        <option value="C">Counselor (C)</option>
+        <option value="S">Staff (S)</option>
+      </select>
+      <button class="btn btn-sm btn-primary" onclick="addStaff()">Add</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== CONSTANTS =====
+const DAYS = ['mon','tue','wed','thu','fri'];
+const DAY_LABELS = { mon:'Monday', tue:'Tuesday', wed:'Wednesday', thu:'Thursday', fri:'Friday' };
+const DAY_SHORT = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri' };
+const SLOTS_FULL = 22; // 8am-7pm
+const SLOTS_FRIDAY = 12; // 8am-2pm
+const STORAGE_KEY = 'counseling-schedule-data';
+
+const STAFF_COLORS = [
+  '#3b82f6','#22c55e','#eab308','#f97316','#ef4444','#a855f7','#06b6d4',
+  '#ec4899','#14b8a6','#f43f5e','#8b5cf6','#84cc16','#fb923c','#0ea5e9',
+  '#d946ef','#10b981','#f59e0b','#6366f1','#e11d48','#059669','#7c3aed',
+  '#dc2626','#0891b2','#c026d3','#65a30d','#ea580c','#4f46e5','#be185d',
+  '#0d9488','#9333ea','#ca8a04','#2563eb','#16a34a','#db2777'
+];
+
+const LOC_CLASS_MAP = {
+  'Mid-City': 'loc-midcity',
+  'ECC': 'loc-ecc',
+  'Harbor View Campus': 'loc-harborview',
+  'CE Mesa': 'loc-cemesa',
+  'CE Miramar': 'loc-cemiramar',
+  'West City': 'loc-westcity',
+  'North City Campus': 'loc-northcity'
+};
+
+const DEFAULT_PROGRAMS = {
+  'calworks': {
+    label: 'CalWORKs',
+    locations: ['Mid-City', 'ECC', 'Harbor View Campus']
+  },
+  'bssp': {
+    label: 'Black Student Success Program',
+    locations: ['Mid-City']
+  },
+  'issp': {
+    label: 'Immigrant Student Success Program',
+    locations: ['Harbor View Campus', 'Mid-City']
+  },
+  'lgbtqia': {
+    label: 'LGBTQIA Program',
+    locations: ['CE Mesa']
+  },
+  'veterans': {
+    label: 'Veterans Program',
+    locations: ['ECC']
+  },
+  'rising-scholar': {
+    label: 'Rising Scholar Program',
+    locations: ['ECC']
+  },
+  'basic-needs': {
+    label: 'Basic Needs Program',
+    locations: ['Mid-City', 'CE Miramar', 'ECC', 'Harbor View Campus', 'CE Mesa', 'West City', 'North City Campus']
+  }
+};
+
+const TERMS = {
+  'summer-2026': { label: 'Summer 2026', fridaysClosed: true },
+  'fall-2026': { label: 'Fall 2026', fridaysClosed: false },
+  'spring-2027': { label: 'Spring 2027', fridaysClosed: false }
+};
+
+const DEFAULT_COUNSELORS = [
+  'Terry Sivers','Abdullahi Haybe','Aimee Serrano','Angie Sanchez-Castillo',
+  'Belle Ayala','Carrie Vang','Diya Spellman','Jessica Walton',
+  'Juan Serrano','Noora Al Saegh','Yasmine Mena','Lizbeth Alvarez Leyva',
+  'Carolina Gonzalez','Fatima Mota','Lisa Carulli','Nathan Klein',
+  'Dulce Carolina Arroyo','Veronica Corral','Bojin Haji','Francheska Morataya'
+];
+
+const DEFAULT_SUPPORT = [
+  'Mitza','Kristi','Aryeri','LaVette','Melissa','Marie',
+  'Hajara','Nida','Erika','Marina','Ahdieh','Pedro'
+];
+
+// ===== STATE =====
+let state = null;
+let currentProgram = 'calworks';
+let currentTerm = 'fall-2026';
+let currentView = 'individual';
+let currentMasterView = 'combined';
+let editingCell = null; // { day, slotIndex }
+
+// ===== SLOT HELPERS =====
+function slotToTime(index) {
+  const hour = 8 + Math.floor(index / 2);
+  const min = (index % 2 === 0) ? '00' : '30';
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const h12 = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
+  return `${h12}:${min} ${ampm}`;
+}
+
+function timeToSlot(timeStr) {
+  // accepts "8:00","8:30","13:00" etc (24h) or slot index
+  if (typeof timeStr === 'number') return timeStr;
+  const [h, m] = timeStr.split(':').map(Number);
+  return (h - 8) * 2 + (m >= 30 ? 1 : 0);
+}
+
+function getMaxSlots(day) {
+  const term = TERMS[currentTerm];
+  if (day === 'fri') {
+    if (term.fridaysClosed) return 0;
+    return SLOTS_FRIDAY;
+  }
+  return SLOTS_FULL;
+}
+
+function getActiveDays() {
+  return TERMS[currentTerm].fridaysClosed ? DAYS.slice(0, 4) : DAYS;
+}
+
+// ===== DATA INITIALIZATION =====
+function createDefaultState() {
+  const staff = [];
+  DEFAULT_COUNSELORS.forEach((name, i) => {
+    staff.push({ id: `c_${i}`, name, type: 'C', color: STAFF_COLORS[i % STAFF_COLORS.length], active: true });
+  });
+  DEFAULT_SUPPORT.forEach((name, i) => {
+    staff.push({ id: `s_${i}`, name, type: 'S', color: STAFF_COLORS[(i + DEFAULT_COUNSELORS.length) % STAFF_COLORS.length], active: true });
+  });
+
+  const programs = {};
+  for (const [key, prog] of Object.entries(DEFAULT_PROGRAMS)) {
+    const terms = {};
+    for (const tKey of Object.keys(TERMS)) {
+      terms[tKey] = { schedules: {} };
+    }
+    programs[key] = { label: prog.label, locations: [...prog.locations], terms };
+  }
+
+  // Populate Fall 2026 schedules from SARS WEEKLY DETAIL documents
+  function addSlots(sched, sid, day, s, e, loc, remote, overload) {
+    if (!sched[sid]) sched[sid] = { slots: {}, comment: '' };
+    for (let i = s; i <= e; i++) {
+      sched[sid].slots[`${day}-${i}`] = { location: loc || '', remote: !!remote, overload: !!overload };
+    }
+  }
+
+  // === BSSP - Terry Sivers (c_0) at Mid-City ===
+  const bssp = programs['bssp'].terms['fall-2026'].schedules;
+  addSlots(bssp, 'c_0', 'mon', 1, 12, 'Mid-City', true);   // Remote day 8:30-2:00
+  addSlots(bssp, 'c_0', 'tue', 13, 20, 'Mid-City');         // Evening 2:30-6:00
+  addSlots(bssp, 'c_0', 'wed', 5, 16, 'Mid-City');          // 10:30-4:00
+  addSlots(bssp, 'c_0', 'thu', 13, 20, 'Mid-City');         // Evening 2:30-6:00
+
+  // === CalWORKs ===
+  const cw = programs['calworks'].terms['fall-2026'].schedules;
+
+  // Abdullahi Haybe (c_1) - Mid-City - overload + Thu remote
+  addSlots(cw, 'c_1', 'thu', 3, 16, 'Mid-City', true);      // Remote 9:30-4:00
+  addSlots(cw, 'c_1', 'tue', 8, 11, 'Mid-City', false, true); // Overload 12:00-1:30
+  addSlots(cw, 'c_1', 'wed', 8, 11, 'Mid-City', false, true); // Overload 12:00-1:30
+
+  // Aimee Serrano (c_2) - Chavez/Mid-City
+  addSlots(cw, 'c_2', 'mon', 3, 16, 'Mid-City', true);      // Remote 9:30-4:00
+  addSlots(cw, 'c_2', 'tue', 3, 12, 'Harbor View Campus');   // CCH 9:30-2:00
+  addSlots(cw, 'c_2', 'wed', 4, 13, 'Harbor View Campus');   // CCH 10:00-2:30
+  addSlots(cw, 'c_2', 'thu', 7, 16, 'Mid-City');             // MC 11:30-4:00
+
+  // Angie Sanchez-Castillo (c_3) - CalWORKs portion at Mid-City
+  addSlots(cw, 'c_3', 'mon', 1, 14, 'Mid-City');             // MC 8:30-3:00
+  addSlots(cw, 'c_3', 'thu', 15, 20, 'Mid-City');            // MC evening 3:30-6:00
+
+  // Belle Ayala (c_4) - Mid-City
+  addSlots(cw, 'c_4', 'mon', 4, 16, 'Mid-City');             // 10:00-4:00
+  addSlots(cw, 'c_4', 'wed', 8, 20, 'Mid-City');             // 12:00-6:00
+  addSlots(cw, 'c_4', 'fri', 3, 8, 'Mid-City');              // 9:30-12:00
+
+  // Carrie Vang (c_5) - Mid-City
+  addSlots(cw, 'c_5', 'tue', 7, 20, 'Mid-City');             // 11:30-6:00
+  addSlots(cw, 'c_5', 'wed', 5, 18, 'Mid-City');             // 10:30-5:00
+
+  // Diya Spellman (c_6) - Mid-City
+  addSlots(cw, 'c_6', 'mon', 8, 9, 'Mid-City', false, true); // OVL 12:00-12:30
+  addSlots(cw, 'c_6', 'mon', 10, 21, 'Mid-City');            // Open 1:00-6:30
+  addSlots(cw, 'c_6', 'tue', 0, 15, 'Mid-City', true);       // Remote 8:00-3:30
+  addSlots(cw, 'c_6', 'wed', 0, 11, 'Mid-City');             // Open 8:00-1:30
+  addSlots(cw, 'c_6', 'wed', 12, 15, 'Mid-City', false, true); // OVL 2:00-3:30
+  addSlots(cw, 'c_6', 'thu', 0, 11, 'Mid-City');             // Open 8:00-1:30
+  addSlots(cw, 'c_6', 'thu', 12, 15, 'Mid-City', false, true); // OVL 2:00-3:30
+
+  // Jessica Walton (c_7) - ECC
+  addSlots(cw, 'c_7', 'mon', 1, 12, 'ECC');                  // 8:30-2:00
+  addSlots(cw, 'c_7', 'tue', 1, 12, 'ECC');                  // 8:30-2:00
+  addSlots(cw, 'c_7', 'wed', 1, 12, 'ECC');                  // 8:30-2:00
+  addSlots(cw, 'c_7', 'thu', 5, 16, 'ECC', true);            // Remote 10:30-4:00
+  addSlots(cw, 'c_7', 'fri', 1, 11, 'ECC', false, true);     // Overload 8:30-1:30
+
+  // Juan Serrano (c_8) - Multiple locations
+  addSlots(cw, 'c_8', 'mon', 2, 7, 'Harbor View Campus');    // CC 9:00-11:30
+  addSlots(cw, 'c_8', 'mon', 14, 16, 'Harbor View Campus', false, true); // OL 3:00-4:00
+  addSlots(cw, 'c_8', 'tue', 2, 6, 'Mid-City');              // MC 9:00-11:00
+  addSlots(cw, 'c_8', 'tue', 13, 14, 'Mid-City');            // Walk-in 2:30-3:00
+  addSlots(cw, 'c_8', 'wed', 3, 7, 'ECC');                   // ECC 9:30-11:30
+  addSlots(cw, 'c_8', 'thu', 1, 8, 'Mid-City', true);        // Remote 8:30-12:00
+  addSlots(cw, 'c_8', 'fri', 0, 11, 'Mid-City', false, true); // Overload 8:00-1:30
+
+  // Yasmine Mena (c_10) - Mid-City
+  addSlots(cw, 'c_10', 'mon', 1, 14, 'Mid-City');            // 8:30-3:00
+  addSlots(cw, 'c_10', 'tue', 7, 18, 'Mid-City');            // 11:30-5:00
+  addSlots(cw, 'c_10', 'wed', 15, 21, 'Mid-City');           // 3:30-6:30
+
+  // Lizbeth Alvarez Leyva (c_11) - ECC
+  addSlots(cw, 'c_11', 'tue', 3, 13, 'ECC');                 // 9:30-2:30
+  addSlots(cw, 'c_11', 'thu', 3, 13, 'ECC');                 // 9:30-2:30
+  addSlots(cw, 'c_11', 'fri', 1, 10, 'ECC');                 // 8:30-1:00
+
+  // Fatima Mota (c_13) - Harbor View Campus (Cesar Chavez)
+  addSlots(cw, 'c_13', 'tue', 9, 20, 'Harbor View Campus');  // 12:30-6:00
+  addSlots(cw, 'c_13', 'wed', 9, 14, 'Harbor View Campus');  // 12:30-3:00
+  addSlots(cw, 'c_13', 'thu', 5, 9, 'Harbor View Campus');   // 10:30-12:30
+
+  // Dulce Carolina Arroyo (c_16) - ECC
+  addSlots(cw, 'c_16', 'mon', 9, 14, 'ECC');                 // 12:30-3:00
+  addSlots(cw, 'c_16', 'tue', 9, 14, 'ECC');                 // 12:30-3:00
+  addSlots(cw, 'c_16', 'wed', 7, 14, 'ECC');                 // 11:30-3:00
+  addSlots(cw, 'c_16', 'fri', 5, 10, 'ECC');                 // 10:30-1:00
+
+  // Bojin Haji (c_18) - ECC
+  addSlots(cw, 'c_18', 'tue', 3, 15, 'ECC');                 // 9:30-3:30
+  addSlots(cw, 'c_18', 'wed', 3, 15, 'ECC');                 // 9:30-3:30
+  addSlots(cw, 'c_18', 'fri', 3, 8, 'ECC');                  // 9:30-12:00
+
+  // === ISSP - Angie Sanchez-Castillo (c_3) at Harbor View ===
+  const issp = programs['issp'].terms['fall-2026'].schedules;
+  addSlots(issp, 'c_3', 'tue', 5, 16, 'Harbor View Campus'); // ISP 10:30-4:00
+
+  // === LGBTQIA - Francheska Morataya (c_19) at CE Mesa ===
+  const lgb = programs['lgbtqia'].terms['fall-2026'].schedules;
+  addSlots(lgb, 'c_19', 'tue', 3, 16, 'CE Mesa');            // 9:30-4:00
+  addSlots(lgb, 'c_19', 'thu', 3, 16, 'CE Mesa');            // 9:30-4:00
+  addSlots(lgb, 'c_19', 'fri', 3, 11, 'CE Mesa');            // 9:30-1:30
+
+  // === Rising Scholar - Nathan Klein (c_15) at ECC ===
+  const rs = programs['rising-scholar'].terms['fall-2026'].schedules;
+  addSlots(rs, 'c_15', 'mon', 1, 14, 'ECC', true);           // Remote 8:30-3:00
+  addSlots(rs, 'c_15', 'tue', 5, 16, 'ECC');                 // 10:30-4:00
+  addSlots(rs, 'c_15', 'wed', 4, 15, 'ECC');                 // 10:00-3:30
+  addSlots(rs, 'c_15', 'thu', 3, 14, 'ECC');                 // 9:30-3:00
+  addSlots(rs, 'c_15', 'fri', 3, 9, 'ECC');                  // 9:30-12:30
+
+  // === Basic Needs - Marina Yousif (s_9) ===
+  const bn = programs['basic-needs'].terms['fall-2026'].schedules;
+  addSlots(bn, 's_9', 'mon', 4, 16, 'Mid-City');             // 10:00-4:00
+  addSlots(bn, 's_9', 'tue', 4, 16, 'Mid-City');             // 10:00-4:00
+  addSlots(bn, 's_9', 'wed', 4, 16, 'Mid-City');             // 10:00-4:00
+  addSlots(bn, 's_9', 'thu', 4, 16, 'Mid-City');             // 10:00-4:00
+  addSlots(bn, 's_9', 'fri', 4, 11, 'Mid-City');             // 10:00-1:30
+
+  return { version: 1, staff, programs };
+}
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      state = JSON.parse(saved);
+      // Ensure all programs and terms exist
+      for (const [key, prog] of Object.entries(DEFAULT_PROGRAMS)) {
+        if (!state.programs[key]) {
+          const terms = {};
+          for (const tKey of Object.keys(TERMS)) terms[tKey] = { schedules: {} };
+          state.programs[key] = { label: prog.label, locations: [...prog.locations], terms };
+        } else {
+          for (const tKey of Object.keys(TERMS)) {
+            if (!state.programs[key].terms[tKey]) {
+              state.programs[key].terms[tKey] = { schedules: {} };
+            }
+          }
+        }
+      }
+      // Merge Fall 2026 default schedules if not yet populated
+      const defaults = createDefaultState();
+      for (const [progKey, defProg] of Object.entries(defaults.programs)) {
+        const defSched = defProg.terms['fall-2026'] && defProg.terms['fall-2026'].schedules;
+        if (!defSched || Object.keys(defSched).length === 0) continue;
+        const curSched = state.programs[progKey].terms['fall-2026'].schedules;
+        if (Object.keys(curSched).length === 0) {
+          state.programs[progKey].terms['fall-2026'].schedules = defSched;
+        }
+      }
+      saveState();
+      return;
+    }
+  } catch(e) { console.error('Load error:', e); }
+  state = createDefaultState();
+  saveState();
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch(e) { console.error('Save error:', e); }
+}
+
+let saveTimeout = null;
+function debounceSave() {
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(saveState, 300);
+}
+
+// ===== SCHEDULE HELPERS =====
+function getSchedule(staffId) {
+  const termData = state.programs[currentProgram].terms[currentTerm];
+  if (!termData.schedules[staffId]) {
+    termData.schedules[staffId] = { slots: {}, comment: '' };
+  }
+  return termData.schedules[staffId];
+}
+
+function getSlotKey(day, index) {
+  return `${day}-${index}`;
+}
+
+function calcHours(staffId) {
+  const schedule = getSchedule(staffId);
+  return Object.keys(schedule.slots).length * 0.5;
+}
+
+// ===== RENDERING: TABS =====
+function renderProgramTabs() {
+  const container = document.getElementById('programTabs');
+  container.innerHTML = '';
+  for (const [key, prog] of Object.entries(DEFAULT_PROGRAMS)) {
+    const tab = document.createElement('button');
+    tab.className = `program-tab${key === currentProgram ? ' active' : ''}`;
+    tab.textContent = prog.label;
+    tab.onclick = () => switchProgram(key);
+    container.appendChild(tab);
+  }
+}
+
+function renderTermTabs() {
+  const container = document.getElementById('termTabs');
+  container.innerHTML = '';
+  for (const [key, term] of Object.entries(TERMS)) {
+    const btn = document.createElement('button');
+    btn.className = `tab-btn${key === currentTerm ? ' active' : ''}`;
+    btn.textContent = term.label;
+    btn.onclick = () => switchTerm(key);
+    container.appendChild(btn);
+  }
+}
+
+function switchProgram(key) {
+  currentProgram = key;
+  renderProgramTabs();
+  populateLocationDropdowns();
+  renderCurrentView();
+}
+
+function switchTerm(key) {
+  currentTerm = key;
+  renderTermTabs();
+  updateFridayCheckbox();
+  renderCurrentView();
+}
+
+function switchView(view) {
+  currentView = view;
+  document.querySelectorAll('#viewTabs .tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === view);
+  });
+  document.querySelectorAll('.view-container').forEach(c => c.classList.remove('active'));
+  document.getElementById(`view-${view}`).classList.add('active');
+  renderCurrentView();
+}
+
+function switchMasterView(type) {
+  currentMasterView = type;
+  document.querySelectorAll('.master-toggle .tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.master === type);
+  });
+  renderMasterView();
+}
+
+function renderCurrentView() {
+  closeCellPopup();
+  if (currentView === 'individual') {
+    populateStaffSelect();
+    renderIndividualGrid();
+  } else if (currentView === 'master') {
+    renderMasterView();
+  } else if (currentView === 'gap') {
+    renderGapView();
+  }
+}
+
+function updateFridayCheckbox() {
+  const fri = document.getElementById('qfFri');
+  if (TERMS[currentTerm].fridaysClosed) {
+    fri.checked = false;
+    fri.disabled = true;
+  } else {
+    fri.disabled = false;
+  }
+}
+
+// ===== STAFF SELECT =====
+function populateStaffSelect() {
+  const sel = document.getElementById('staffSelect');
+  const currentVal = sel.value;
+  sel.innerHTML = '<option value="">-- Select Staff Member --</option>';
+
+  const counselors = state.staff.filter(s => s.active && s.type === 'C').sort((a,b) => a.name.localeCompare(b.name));
+  const support = state.staff.filter(s => s.active && s.type === 'S').sort((a,b) => a.name.localeCompare(b.name));
+
+  if (counselors.length) {
+    const grp = document.createElement('optgroup');
+    grp.label = 'Counselors';
+    counselors.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = `${s.name} (C)`;
+      grp.appendChild(opt);
+    });
+    sel.appendChild(grp);
+  }
+  if (support.length) {
+    const grp = document.createElement('optgroup');
+    grp.label = 'Support Staff';
+    support.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = `${s.name} (S)`;
+      grp.appendChild(opt);
+    });
+    sel.appendChild(grp);
+  }
+
+  if (currentVal && state.staff.find(s => s.id === currentVal)) {
+    sel.value = currentVal;
+  }
+}
+
+// ===== LOCATION DROPDOWNS =====
+function populateLocationDropdowns() {
+  const locs = state.programs[currentProgram].locations;
+
+  // Quick fill
+  const qfLoc = document.getElementById('qfLocation');
+  qfLoc.innerHTML = locs.map(l => `<option value="${l}">${l}</option>`).join('');
+
+  // Popup
+  const popLoc = document.getElementById('popupLocation');
+  popLoc.innerHTML = locs.map(l => `<option value="${l}">${l}</option>`).join('');
+
+  // Time selects for quick fill
+  const qfStart = document.getElementById('qfStart');
+  const qfEnd = document.getElementById('qfEnd');
+  qfStart.innerHTML = '';
+  qfEnd.innerHTML = '';
+  for (let i = 0; i < SLOTS_FULL; i++) {
+    qfStart.innerHTML += `<option value="${i}">${slotToTime(i)}</option>`;
+    qfEnd.innerHTML += `<option value="${i}">${slotToTime(i)}</option>`;
+  }
+  qfEnd.value = String(SLOTS_FULL - 1);
+}
+
+// ===== INDIVIDUAL GRID =====
+function renderIndividualGrid() {
+  const container = document.getElementById('individualGridContainer');
+  const staffId = document.getElementById('staffSelect').value;
+
+  if (!staffId) {
+    container.innerHTML = '<p style="color:var(--text-muted);padding:40px;text-align:center">Select a staff member to view/edit their schedule.</p>';
+    document.getElementById('hoursDisplay').textContent = 'Total: 0 hrs/week';
+    return;
+  }
+
+  const schedule = getSchedule(staffId);
+  const days = getActiveDays();
+  const staff = state.staff.find(s => s.id === staffId);
+
+  let html = `<table class="schedule-grid" id="indGrid">`;
+  html += `<thead><tr><th style="width:80px">Time</th>`;
+  days.forEach(d => { html += `<th>${DAY_LABELS[d]}</th>`; });
+  html += `<th style="width:180px">Comments</th></tr></thead><tbody>`;
+
+  const maxSlots = SLOTS_FULL;
+  const commentRowSpan = maxSlots;
+
+  for (let i = 0; i < maxSlots; i++) {
+    html += `<tr>`;
+    html += `<td class="time-label">${slotToTime(i)}</td>`;
+
+    days.forEach(d => {
+      const max = getMaxSlots(d);
+      if (i >= max) {
+        html += `<td style="background:var(--bg-secondary);cursor:default" class="closed-cell"></td>`;
+        return;
+      }
+      const key = getSlotKey(d, i);
+      const slot = schedule.slots[key];
+      if (slot) {
+        const locClass = LOC_CLASS_MAP[slot.location] || '';
+        const remoteText = slot.remote ? ' <span class="remote-badge">(R)</span>' : '';
+        const olText = slot.overload ? ' <span class="ol-badge">(OL)</span>' : '';
+        html += `<td class="filled ${locClass} ${slot.remote ? 'remote-slot' : ''}"
+                     data-day="${d}" data-slot="${i}" onclick="openCellPopup(event,'${d}',${i})">
+                     ${slot.location}${remoteText}${olText}</td>`;
+      } else {
+        html += `<td data-day="${d}" data-slot="${i}" onclick="openCellPopup(event,'${d}',${i})"></td>`;
+      }
+    });
+
+    if (i === 0) {
+      html += `<td class="comment-col" rowspan="${commentRowSpan}">
+        <textarea class="comment-textarea" placeholder="Notes..."
+          onchange="saveComment('${staffId}', this.value)">${schedule.comment || ''}</textarea>
+      </td>`;
+    }
+
+    html += `</tr>`;
+  }
+
+  html += `</tbody></table>`;
+  container.innerHTML = html;
+
+  const hours = calcHours(staffId);
+  document.getElementById('hoursDisplay').textContent = `Total: ${hours} hrs/week`;
+}
+
+// ===== CELL POPUP =====
+function openCellPopup(event, day, slotIndex) {
+  event.stopPropagation();
+  const staffId = document.getElementById('staffSelect').value;
+  if (!staffId) return;
+
+  editingCell = { day, slotIndex };
+  const schedule = getSchedule(staffId);
+  const key = getSlotKey(day, slotIndex);
+  const slot = schedule.slots[key];
+
+  const popup = document.getElementById('cellPopup');
+  const popLoc = document.getElementById('popupLocation');
+  const popRemote = document.getElementById('popupRemote');
+  const popOL = document.getElementById('popupOL');
+
+  if (slot) {
+    popLoc.value = slot.location;
+    popRemote.checked = slot.remote;
+    popOL.checked = !!slot.overload;
+  } else {
+    popLoc.selectedIndex = 0;
+    popRemote.checked = false;
+    popOL.checked = false;
+  }
+
+  // Position popup near click
+  const rect = event.target.getBoundingClientRect();
+  let left = rect.right + 8;
+  let top = rect.top;
+  if (left + 220 > window.innerWidth) left = rect.left - 220;
+  if (top + 120 > window.innerHeight) top = window.innerHeight - 130;
+
+  popup.style.left = left + 'px';
+  popup.style.top = top + 'px';
+  popup.classList.add('show');
+}
+
+function closeCellPopup() {
+  document.getElementById('cellPopup').classList.remove('show');
+  editingCell = null;
+}
+
+function saveCell() {
+  if (!editingCell) return;
+  const staffId = document.getElementById('staffSelect').value;
+  if (!staffId) return;
+
+  const schedule = getSchedule(staffId);
+  const key = getSlotKey(editingCell.day, editingCell.slotIndex);
+  const location = document.getElementById('popupLocation').value;
+  const remote = document.getElementById('popupRemote').checked;
+  const overload = document.getElementById('popupOL').checked;
+
+  schedule.slots[key] = { location, remote, overload };
+  closeCellPopup();
+  debounceSave();
+  renderIndividualGrid();
+}
+
+function clearCell() {
+  if (!editingCell) return;
+  const staffId = document.getElementById('staffSelect').value;
+  if (!staffId) return;
+
+  const schedule = getSchedule(staffId);
+  const key = getSlotKey(editingCell.day, editingCell.slotIndex);
+  delete schedule.slots[key];
+  closeCellPopup();
+  debounceSave();
+  renderIndividualGrid();
+}
+
+function saveComment(staffId, value) {
+  const schedule = getSchedule(staffId);
+  schedule.comment = value;
+  debounceSave();
+}
+
+// Close popup on outside click
+document.addEventListener('click', (e) => {
+  const popup = document.getElementById('cellPopup');
+  if (popup.classList.contains('show') && !popup.contains(e.target)) {
+    closeCellPopup();
+  }
+});
+
+// ===== QUICK FILL =====
+function applyQuickFill() {
+  const staffId = document.getElementById('staffSelect').value;
+  if (!staffId) { alert('Select a staff member first.'); return; }
+
+  const location = document.getElementById('qfLocation').value;
+  const remote = document.getElementById('qfRemote').checked;
+  const overload = document.getElementById('qfOL').checked;
+  const startSlot = parseInt(document.getElementById('qfStart').value);
+  const endSlot = parseInt(document.getElementById('qfEnd').value);
+
+  const dayChecks = {
+    mon: document.getElementById('qfMon').checked,
+    tue: document.getElementById('qfTue').checked,
+    wed: document.getElementById('qfWed').checked,
+    thu: document.getElementById('qfThu').checked,
+    fri: document.getElementById('qfFri').checked
+  };
+
+  const schedule = getSchedule(staffId);
+  const days = getActiveDays();
+
+  days.forEach(d => {
+    if (!dayChecks[d]) return;
+    const max = getMaxSlots(d);
+    for (let i = startSlot; i <= endSlot && i < max; i++) {
+      schedule.slots[getSlotKey(d, i)] = { location, remote, overload };
+    }
+  });
+
+  debounceSave();
+  renderIndividualGrid();
+}
+
+function clearQuickFill() {
+  const staffId = document.getElementById('staffSelect').value;
+  if (!staffId) { alert('Select a staff member first.'); return; }
+
+  const startSlot = parseInt(document.getElementById('qfStart').value);
+  const endSlot = parseInt(document.getElementById('qfEnd').value);
+
+  const dayChecks = {
+    mon: document.getElementById('qfMon').checked,
+    tue: document.getElementById('qfTue').checked,
+    wed: document.getElementById('qfWed').checked,
+    thu: document.getElementById('qfThu').checked,
+    fri: document.getElementById('qfFri').checked
+  };
+
+  const schedule = getSchedule(staffId);
+  const days = getActiveDays();
+
+  days.forEach(d => {
+    if (!dayChecks[d]) return;
+    const max = getMaxSlots(d);
+    for (let i = startSlot; i <= endSlot && i < max; i++) {
+      delete schedule.slots[getSlotKey(d, i)];
+    }
+  });
+
+  debounceSave();
+  renderIndividualGrid();
+}
+
+// ===== MASTER VIEW =====
+function renderMasterView() {
+  if (currentMasterView === 'combined') {
+    renderMasterCombined();
+  } else {
+    renderMasterByLocation();
+  }
+}
+
+function buildCoverageMap() {
+  // Returns { "day-slot": [ { staffId, staffName, staffColor, location, remote } ] }
+  const map = {};
+  const termData = state.programs[currentProgram].terms[currentTerm];
+
+  for (const [staffId, schedule] of Object.entries(termData.schedules || {})) {
+    const staff = state.staff.find(s => s.id === staffId);
+    if (!staff || !staff.active) continue;
+
+    for (const [key, slot] of Object.entries(schedule.slots || {})) {
+      if (!map[key]) map[key] = [];
+      map[key].push({
+        staffId,
+        staffName: staff.name,
+        staffColor: staff.color,
+        staffType: staff.type,
+        location: slot.location,
+        remote: slot.remote,
+        overload: slot.overload
+      });
+    }
+  }
+  return map;
+}
+
+function renderMasterCombined() {
+  const container = document.getElementById('masterContent');
+  const coverage = buildCoverageMap();
+  const days = getActiveDays();
+
+  let html = `<div class="grid-scroll"><table class="schedule-grid">`;
+  html += `<thead><tr><th style="width:80px">Time</th>`;
+  days.forEach(d => { html += `<th>${DAY_LABELS[d]}</th>`; });
+  html += `<th style="width:180px">Comments</th></tr></thead><tbody>`;
+
+  for (let i = 0; i < SLOTS_FULL; i++) {
+    html += `<tr><td class="time-label">${slotToTime(i)}</td>`;
+
+    days.forEach(d => {
+      const max = getMaxSlots(d);
+      if (i >= max) {
+        html += `<td style="background:var(--bg-secondary);cursor:default"></td>`;
+        return;
+      }
+      const key = getSlotKey(d, i);
+      const entries = coverage[key] || [];
+
+      html += `<td class="master-cell">`;
+      const show = entries.slice(0, 4);
+      show.forEach(e => {
+        const rBadge = e.remote ? ' (R)' : '';
+        const olBadge = e.overload ? ' (OL)' : '';
+        html += `<span class="staff-chip" style="background:${e.staffColor}22;color:${e.staffColor};border:1px solid ${e.staffColor}44"
+                  title="${e.staffName} (${e.staffType}) - ${e.location}${rBadge}${olBadge}">
+                  ${e.staffName.split(' ')[0]}${rBadge}${olBadge}</span>`;
+      });
+      if (entries.length > 4) {
+        const extra = entries.slice(4).map(e => `${e.staffName} (${e.staffType}) - ${e.location}${e.overload ? ' (OL)' : ''}`).join('\n');
+        html += `<span class="more-chip" title="${extra}">+${entries.length - 4}</span>`;
+      }
+      html += `</td>`;
+    });
+
+    if (i === 0) {
+      html += `<td class="comment-col" rowspan="${SLOTS_FULL}">
+        <textarea class="comment-textarea" placeholder="Master schedule notes..."
+          onchange="saveMasterComment(this.value)">${getMasterComment()}</textarea>
+      </td>`;
+    }
+
+    html += `</tr>`;
+  }
+
+  html += `</tbody></table></div>`;
+  container.innerHTML = html;
+}
+
+function renderMasterByLocation() {
+  const container = document.getElementById('masterContent');
+  const coverage = buildCoverageMap();
+  const days = getActiveDays();
+  const locations = state.programs[currentProgram].locations;
+
+  let html = '';
+
+  locations.forEach(loc => {
+    html += `<div class="master-section"><h3>${loc}</h3>`;
+    html += `<div class="grid-scroll"><table class="schedule-grid">`;
+    html += `<thead><tr><th style="width:80px">Time</th>`;
+    days.forEach(d => { html += `<th>${DAY_LABELS[d]}</th>`; });
+    html += `</tr></thead><tbody>`;
+
+    for (let i = 0; i < SLOTS_FULL; i++) {
+      html += `<tr><td class="time-label">${slotToTime(i)}</td>`;
+
+      days.forEach(d => {
+        const max = getMaxSlots(d);
+        if (i >= max) {
+          html += `<td style="background:var(--bg-secondary);cursor:default"></td>`;
+          return;
+        }
+        const key = getSlotKey(d, i);
+        const entries = (coverage[key] || []).filter(e => e.location === loc);
+
+        html += `<td class="master-cell">`;
+        entries.forEach(e => {
+          const rBadge = e.remote ? ' (R)' : '';
+          const olBadge = e.overload ? ' (OL)' : '';
+          html += `<span class="staff-chip" style="background:${e.staffColor}22;color:${e.staffColor};border:1px solid ${e.staffColor}44"
+                    title="${e.staffName} (${e.staffType})${rBadge}${olBadge}">
+                    ${e.staffName.split(' ')[0]}${rBadge}${olBadge}</span>`;
+        });
+        html += `</td>`;
+      });
+
+      html += `</tr>`;
+    }
+
+    html += `</tbody></table></div></div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+function getMasterComment() {
+  const termData = state.programs[currentProgram].terms[currentTerm];
+  return termData._masterComment || '';
+}
+
+function saveMasterComment(value) {
+  state.programs[currentProgram].terms[currentTerm]._masterComment = value;
+  debounceSave();
+}
+
+// ===== GAP ANALYSIS =====
+function renderGapView() {
+  const coverage = buildCoverageMap();
+  const days = getActiveDays();
+  const locations = state.programs[currentProgram].locations;
+
+  // Compute gap stats
+  let totalGaps = 0;
+  let totalSingle = 0;
+  let totalCovered = 0;
+  const locGaps = {};
+
+  locations.forEach(loc => {
+    locGaps[loc] = 0;
+    days.forEach(d => {
+      const max = getMaxSlots(d);
+      for (let i = 0; i < max; i++) {
+        const key = getSlotKey(d, i);
+        const entries = (coverage[key] || []).filter(e => e.location === loc);
+        if (entries.length === 0) { totalGaps++; locGaps[loc]++; }
+        else if (entries.length === 1) totalSingle++;
+        else totalCovered++;
+      }
+    });
+  });
+
+  // Summary cards
+  const summaryEl = document.getElementById('gapSummary');
+  let summaryHtml = `
+    <div class="gap-card">
+      <div class="gap-label">Uncovered Slots</div>
+      <div class="gap-value ${totalGaps > 0 ? 'danger' : 'success'}">${totalGaps}</div>
+    </div>
+    <div class="gap-card">
+      <div class="gap-label">Uncovered Hours</div>
+      <div class="gap-value ${totalGaps > 0 ? 'danger' : 'success'}">${(totalGaps * 0.5).toFixed(1)}</div>
+    </div>
+    <div class="gap-card">
+      <div class="gap-label">Single Coverage Slots</div>
+      <div class="gap-value warning">${totalSingle}</div>
+    </div>
+    <div class="gap-card">
+      <div class="gap-label">2+ Coverage Slots</div>
+      <div class="gap-value success">${totalCovered}</div>
+    </div>
+  `;
+  locations.forEach(loc => {
+    summaryHtml += `
+      <div class="gap-card">
+        <div class="gap-label">${loc} Gaps</div>
+        <div class="gap-value ${locGaps[loc] > 0 ? 'danger' : 'success'}">${(locGaps[loc] * 0.5).toFixed(1)} hrs</div>
+      </div>
+    `;
+  });
+  summaryEl.innerHTML = summaryHtml;
+
+  // Gap grids per location
+  const contentEl = document.getElementById('gapContent');
+  let html = '';
+
+  locations.forEach(loc => {
+    html += `<div class="master-section"><h3>${loc} -- Coverage Map</h3>`;
+    html += `<div class="grid-scroll"><table class="schedule-grid">`;
+    html += `<thead><tr><th style="width:80px">Time</th>`;
+    days.forEach(d => { html += `<th>${DAY_LABELS[d]}</th>`; });
+    html += `</tr></thead><tbody>`;
+
+    for (let i = 0; i < SLOTS_FULL; i++) {
+      html += `<tr><td class="time-label">${slotToTime(i)}</td>`;
+
+      days.forEach(d => {
+        const max = getMaxSlots(d);
+        if (i >= max) {
+          html += `<td style="background:var(--bg-secondary);cursor:default"></td>`;
+          return;
+        }
+        const key = getSlotKey(d, i);
+        const entries = (coverage[key] || []).filter(e => e.location === loc);
+        const count = entries.length;
+
+        let cls = 'gap-none';
+        if (count === 1) cls = 'gap-single';
+        else if (count >= 2) cls = 'gap-covered';
+
+        html += `<td class="master-cell ${cls}" title="${count} staff assigned">`;
+        html += `<span class="gap-count">${count}</span>`;
+        if (count > 0) {
+          const names = entries.map(e => e.staffName.split(' ')[0]).join(', ');
+          html += `<br><span style="font-size:9px;color:var(--text-secondary)">${names}</span>`;
+        }
+        html += `</td>`;
+      });
+
+      html += `</tr>`;
+    }
+
+    html += `</tbody></table></div></div>`;
+  });
+
+  contentEl.innerHTML = html;
+}
+
+// ===== STAFF MANAGEMENT =====
+function openStaffModal() {
+  document.getElementById('staffModal').classList.add('show');
+  renderStaffList();
+}
+
+function closeStaffModal() {
+  document.getElementById('staffModal').classList.remove('show');
+  populateStaffSelect();
+  renderCurrentView();
+}
+
+function renderStaffList() {
+  const container = document.getElementById('staffList');
+  let html = '<h3 style="font-size:14px;color:var(--text-secondary);margin-bottom:8px">Counselors</h3>';
+
+  const counselors = state.staff.filter(s => s.type === 'C' && s.active).sort((a,b) => a.name.localeCompare(b.name));
+  const support = state.staff.filter(s => s.type === 'S' && s.active).sort((a,b) => a.name.localeCompare(b.name));
+
+  counselors.forEach(s => { html += staffItemHTML(s); });
+
+  html += '<h3 style="font-size:14px;color:var(--text-secondary);margin:12px 0 8px">Support Staff</h3>';
+  support.forEach(s => { html += staffItemHTML(s); });
+
+  container.innerHTML = html;
+}
+
+function staffItemHTML(s) {
+  return `<div class="staff-list-item">
+    <input type="color" value="${s.color}" style="width:24px;height:24px;border:none;background:none;cursor:pointer;padding:0"
+      onchange="updateStaffColor('${s.id}',this.value)">
+    <span class="staff-name">${s.name}</span>
+    <span class="staff-type-badge type-${s.type.toLowerCase()}">${s.type === 'C' ? 'Counselor' : 'Staff'}</span>
+    <button class="btn btn-sm" onclick="renameStaff('${s.id}')">Rename</button>
+    <button class="btn btn-sm btn-danger" onclick="removeStaff('${s.id}')">Remove</button>
+  </div>`;
+}
+
+function addStaff() {
+  const nameInput = document.getElementById('newStaffName');
+  const typeSelect = document.getElementById('newStaffType');
+  const name = nameInput.value.trim();
+  if (!name) return;
+
+  const id = `custom_${Date.now()}`;
+  const colorIdx = state.staff.length % STAFF_COLORS.length;
+  state.staff.push({ id, name, type: typeSelect.value, color: STAFF_COLORS[colorIdx], active: true });
+  nameInput.value = '';
+  saveState();
+  renderStaffList();
+}
+
+function removeStaff(id) {
+  const s = state.staff.find(s => s.id === id);
+  if (s && confirm(`Remove ${s.name}? Their schedule data will be preserved but hidden.`)) {
+    s.active = false;
+    saveState();
+    renderStaffList();
+  }
+}
+
+function renameStaff(id) {
+  const s = state.staff.find(s => s.id === id);
+  if (!s) return;
+  const newName = prompt('Enter new name:', s.name);
+  if (newName && newName.trim()) {
+    s.name = newName.trim();
+    saveState();
+    renderStaffList();
+  }
+}
+
+function updateStaffColor(id, color) {
+  const s = state.staff.find(s => s.id === id);
+  if (s) {
+    s.color = color;
+    saveState();
+  }
+}
+
+// ===== IMPORT / EXPORT =====
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `schedule-data-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importJSON() {
+  document.getElementById('importFile').click();
+}
+
+function handleImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.staff && data.programs) {
+        state = data;
+        saveState();
+        renderProgramTabs();
+        renderTermTabs();
+        populateLocationDropdowns();
+        populateStaffSelect();
+        renderCurrentView();
+        alert('Data imported successfully!');
+      } else {
+        alert('Invalid file format. Expected schedule data JSON.');
+      }
+    } catch(err) {
+      alert('Error reading file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ===== PDF EXPORT =====
+async function exportIndividualPDF() {
+  const staffId = document.getElementById('staffSelect').value;
+  if (!staffId) { alert('Select a staff member first.'); return; }
+
+  const staff = state.staff.find(s => s.id === staffId);
+  const grid = document.getElementById('indGrid');
+  if (!grid) return;
+
+  try {
+    const canvas = await html2canvas(grid, {
+      backgroundColor: '#1e293b',
+      scale: 2,
+      logging: false
+    });
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    // Title
+    pdf.setFontSize(16);
+    pdf.setTextColor(30, 41, 59);
+    pdf.text(`${staff.name} (${staff.type}) - ${TERMS[currentTerm].label}`, 14, 15);
+    pdf.setFontSize(10);
+    pdf.text(`${state.programs[currentProgram].label} | Total: ${calcHours(staffId)} hrs/week`, 14, 22);
+
+    const imgData = canvas.toDataURL('image/png');
+    const pageWidth = pdf.internal.pageSize.getWidth() - 28;
+    const ratio = canvas.height / canvas.width;
+    const imgHeight = pageWidth * ratio;
+
+    pdf.addImage(imgData, 'PNG', 14, 28, pageWidth, Math.min(imgHeight, 170));
+    pdf.save(`${staff.name.replace(/\s+/g,'_')}_${currentTerm}_schedule.pdf`);
+  } catch(err) {
+    console.error('PDF error:', err);
+    alert('PDF generation failed. Try using browser Print (Ctrl+P) as fallback.');
+  }
+}
+
+async function exportMasterPDF() {
+  const content = document.getElementById('masterContent');
+  if (!content) return;
+
+  try {
+    const canvas = await html2canvas(content, {
+      backgroundColor: '#1e293b',
+      scale: 2,
+      logging: false,
+      windowWidth: 1400
+    });
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    pdf.setFontSize(16);
+    pdf.setTextColor(30, 41, 59);
+    pdf.text(`Master Schedule - ${state.programs[currentProgram].label}`, 14, 15);
+    pdf.setFontSize(10);
+    pdf.text(`${TERMS[currentTerm].label} | ${currentMasterView === 'combined' ? 'Combined Overlay' : 'Per-Location Breakdown'}`, 14, 22);
+
+    const imgData = canvas.toDataURL('image/png');
+    const pageWidth = pdf.internal.pageSize.getWidth() - 28;
+    const pageHeight = pdf.internal.pageSize.getHeight() - 35;
+    const ratio = canvas.height / canvas.width;
+    let imgHeight = pageWidth * ratio;
+
+    if (imgHeight <= pageHeight) {
+      pdf.addImage(imgData, 'PNG', 14, 28, pageWidth, imgHeight);
+    } else {
+      // Multi-page
+      const pages = Math.ceil(imgHeight / pageHeight);
+      for (let p = 0; p < pages; p++) {
+        if (p > 0) pdf.addPage();
+        const srcY = (p * pageHeight / imgHeight) * canvas.height;
+        const srcH = (pageHeight / imgHeight) * canvas.height;
+
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = Math.min(srcH, canvas.height - srcY);
+        const ctx = tempCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, srcY, canvas.width, tempCanvas.height, 0, 0, canvas.width, tempCanvas.height);
+
+        const pageImg = tempCanvas.toDataURL('image/png');
+        const h = (tempCanvas.height / canvas.width) * pageWidth;
+        pdf.addImage(pageImg, 'PNG', 14, p === 0 ? 28 : 10, pageWidth, h);
+      }
+    }
+
+    pdf.save(`master_schedule_${currentProgram}_${currentTerm}.pdf`);
+  } catch(err) {
+    console.error('PDF error:', err);
+    alert('PDF generation failed. Try using browser Print (Ctrl+P) as fallback.');
+  }
+}
+
+// ===== INITIALIZATION =====
+function init() {
+  loadState();
+  renderProgramTabs();
+  renderTermTabs();
+  populateLocationDropdowns();
+  populateStaffSelect();
+  updateFridayCheckbox();
+  renderCurrentView();
+}
+
+init();
+</script>
+</body>
+</html>
