@@ -901,7 +901,117 @@ function createDefaultState() {
   addSlots(bn, 's_9', 'thu', 4, 16, 'Mid-City');             // 10:00-4:00
   addSlots(bn, 's_9', 'fri', 4, 11, 'Mid-City');             // 10:00-1:30
 
-  return { version: 2, staff, programs };
+  // ============================================================
+  // SUMMER 2026 - CalWORKs (Fridays closed)
+  // ============================================================
+  const cwS = programs['calworks'].terms['summer-2026'].schedules;
+
+  // Abdullahi Haybe (c_1) - Mid-City
+  addSlots(cwS, 'c_1', 'mon', 3, 14, 'Mid-City', true);      // Remote 9:30-3:00
+  addSlots(cwS, 'c_1', 'tue', 1, 10, 'Mid-City');             // Open 8:30-1:00
+  addSlots(cwS, 'c_1', 'wed', 11, 20, 'Mid-City');            // Open 1:30-6:00
+  addSlots(cwS, 'c_1', 'thu', 11, 20, 'Mid-City');            // Open 1:30-6:00
+
+  // Aimee Serrano (c_2) - Chavez/Mid-City
+  addSlots(cwS, 'c_2', 'mon', 3, 16, 'Mid-City', true);      // Remote 9:30-4:00
+  addSlots(cwS, 'c_2', 'tue', 3, 12, 'Harbor View Campus');   // CCH 9:30-2:00
+  addSlots(cwS, 'c_2', 'wed', 3, 8, 'Harbor View Campus');    // CCH 9:30-12:00
+  addSlots(cwS, 'c_2', 'wed', 10, 15, 'Harbor View Campus', false, true); // OL 1:00-3:30
+  addSlots(cwS, 'c_2', 'thu', 5, 11, 'Mid-City');             // MC 10:30-1:30
+  addSlots(cwS, 'c_2', 'thu', 13, 17, 'Mid-City', false, true); // OL 2:30-4:30
+
+  // Angie Sanchez-Castillo (c_3) - Mid-City (CalWORKs portion)
+  addSlots(cwS, 'c_3', 'mon', 1, 14, 'Mid-City');             // MC 8:30-3:00
+  addSlots(cwS, 'c_3', 'thu', 15, 20, 'Mid-City');            // MC evening 3:30-6:00
+
+  // Belle Ayala (c_4) - Mid-City
+  addSlots(cwS, 'c_4', 'mon', 4, 16, 'Mid-City');             // 10:00-4:00
+  addSlots(cwS, 'c_4', 'thu', 8, 20, 'Mid-City');             // 12:00-6:00
+
+  // Carrie Vang (c_5) - Mid-City
+  addSlots(cwS, 'c_5', 'tue', 7, 20, 'Mid-City');             // 11:30-6:00
+  addSlots(cwS, 'c_5', 'wed', 5, 18, 'Mid-City');             // 10:30-5:00
+
+  // Diya Spellman (c_6) - Mid-City
+  addSlots(cwS, 'c_6', 'mon', 8, 9, 'Mid-City', false, true); // OVL 12:00-12:30
+  addSlots(cwS, 'c_6', 'mon', 10, 21, 'Mid-City');            // Open 1:00-6:30
+  addSlots(cwS, 'c_6', 'tue', 0, 15, 'Mid-City', true);       // Remote 8:00-3:30
+  addSlots(cwS, 'c_6', 'wed', 0, 11, 'Mid-City');             // Open 8:00-1:30
+  addSlots(cwS, 'c_6', 'wed', 12, 15, 'Mid-City', false, true); // OVL 2:00-3:30
+  addSlots(cwS, 'c_6', 'thu', 0, 11, 'Mid-City');             // Open 8:00-1:30
+  addSlots(cwS, 'c_6', 'thu', 12, 15, 'Mid-City', false, true); // OVL 2:00-3:30
+
+  // Juan Serrano (c_8) - Multiple locations
+  addSlots(cwS, 'c_8', 'mon', 0, 5, 'Harbor View Campus', false, true); // OL 8:00-10:30
+  addSlots(cwS, 'c_8', 'mon', 6, 12, 'Harbor View Campus');   // CC/Walk-in 11:00-2:00
+  addSlots(cwS, 'c_8', 'mon', 14, 15, 'Harbor View Campus', false, true); // OL 3:00-3:30
+  addSlots(cwS, 'c_8', 'tue', 2, 8, 'Mid-City');              // MC 9:00-12:00
+  addSlots(cwS, 'c_8', 'tue', 9, 16, 'Mid-City', false, true); // OL 12:30-4:00
+  addSlots(cwS, 'c_8', 'wed', 2, 9, 'ECC');                   // ECC 9:00-12:30
+  addSlots(cwS, 'c_8', 'wed', 12, 13, 'ECC');                 // ECC 2:00-2:30
+  addSlots(cwS, 'c_8', 'thu', 2, 9, 'Mid-City', true);        // Remote 9:00-12:30
+  addSlots(cwS, 'c_8', 'thu', 12, 16, 'Mid-City', true);      // Remote 2:00-4:00
+
+  // Yasmine Mena (c_10) - Mid-City
+  addSlots(cwS, 'c_10', 'mon', 1, 14, 'Mid-City');            // 8:30-3:00
+  addSlots(cwS, 'c_10', 'tue', 7, 18, 'Mid-City');            // 11:30-5:00
+  addSlots(cwS, 'c_10', 'wed', 15, 21, 'Mid-City');           // 3:30-6:30
+
+  // Fatima Mota (c_13) - Harbor View Campus
+  addSlots(cwS, 'c_13', 'tue', 9, 20, 'Harbor View Campus');  // 12:30-6:00
+  addSlots(cwS, 'c_13', 'wed', 9, 14, 'Harbor View Campus');  // 12:30-3:00
+  addSlots(cwS, 'c_13', 'thu', 5, 9, 'Harbor View Campus');   // 10:30-12:30
+
+  // Dulce Carolina Arroyo (c_16) - ECC
+  addSlots(cwS, 'c_16', 'mon', 9, 14, 'ECC');                 // 12:30-3:00
+  addSlots(cwS, 'c_16', 'tue', 9, 14, 'ECC');                 // 12:30-3:00
+  addSlots(cwS, 'c_16', 'wed', 7, 14, 'ECC');                 // 11:30-3:00
+
+  // Bojin Haji (c_18) - ECC
+  addSlots(cwS, 'c_18', 'mon', 3, 16, 'ECC');                 // 9:30-4:00
+  addSlots(cwS, 'c_18', 'tue', 3, 18, 'ECC');                 // 9:30-5:00
+
+  // ============================================================
+  // SPRING 2027 - CalWORKs
+  // ============================================================
+  const cwP = programs['calworks'].terms['spring-2027'].schedules;
+
+  // Angie Sanchez-Castillo (c_3) - Mid-City
+  addSlots(cwP, 'c_3', 'mon', 1, 14, 'Mid-City');             // MC 8:30-3:00
+  addSlots(cwP, 'c_3', 'thu', 15, 20, 'Mid-City');            // MC evening 3:30-6:00
+
+  // Carrie Vang (c_5) - Mid-City
+  addSlots(cwP, 'c_5', 'tue', 7, 20, 'Mid-City');             // 11:30-6:00
+  addSlots(cwP, 'c_5', 'wed', 5, 18, 'Mid-City');             // 10:30-5:00
+
+  // Jessica Walton (c_7) - ECC
+  addSlots(cwP, 'c_7', 'mon', 1, 12, 'ECC');                  // 8:30-2:00
+  addSlots(cwP, 'c_7', 'tue', 1, 12, 'ECC');                  // 8:30-2:00
+  addSlots(cwP, 'c_7', 'wed', 1, 12, 'ECC');                  // 8:30-2:00
+  addSlots(cwP, 'c_7', 'thu', 5, 16, 'ECC', true);            // Remote 10:30-4:00
+  addSlots(cwP, 'c_7', 'fri', 1, 8, 'ECC');                   // 8:30-12:00
+
+  // Yasmine Mena (c_10) - Mid-City
+  addSlots(cwP, 'c_10', 'mon', 1, 14, 'Mid-City');            // 8:30-3:00
+  addSlots(cwP, 'c_10', 'tue', 7, 18, 'Mid-City');            // 11:30-5:00
+  addSlots(cwP, 'c_10', 'wed', 15, 21, 'Mid-City');           // 3:30-6:30
+
+  // Fatima Mota (c_13) - Harbor View Campus
+  addSlots(cwP, 'c_13', 'tue', 9, 20, 'Harbor View Campus');  // 12:30-6:00
+  addSlots(cwP, 'c_13', 'wed', 9, 14, 'Harbor View Campus');  // 12:30-3:00
+  addSlots(cwP, 'c_13', 'thu', 5, 9, 'Harbor View Campus');   // 10:30-12:30
+
+  // Dulce Carolina Arroyo (c_16) - ECC
+  addSlots(cwP, 'c_16', 'mon', 9, 14, 'ECC');                 // 12:30-3:00
+  addSlots(cwP, 'c_16', 'tue', 9, 14, 'ECC');                 // 12:30-3:00
+  addSlots(cwP, 'c_16', 'wed', 7, 14, 'ECC');                 // 11:30-3:00
+  addSlots(cwP, 'c_16', 'fri', 5, 10, 'ECC');                 // 10:30-1:00
+
+  // ISSP - Angie Spring 2027
+  const isspP = programs['issp'].terms['spring-2027'].schedules;
+  addSlots(isspP, 'c_3', 'tue', 5, 16, 'Harbor View Campus'); // ISP 10:30-4:00
+
+  return { version: 3, staff, programs };
 }
 
 function loadState() {
@@ -910,7 +1020,7 @@ function loadState() {
     if (saved) {
       const parsed = JSON.parse(saved);
       // If old version, reset to get new Fall 2026 schedules
-      if (!parsed.version || parsed.version < 2) {
+      if (!parsed.version || parsed.version < 3) {
         state = createDefaultState();
         saveState();
         return;
