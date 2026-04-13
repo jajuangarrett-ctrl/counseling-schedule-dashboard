@@ -901,14 +901,21 @@ function createDefaultState() {
   addSlots(bn, 's_9', 'thu', 4, 16, 'Mid-City');             // 10:00-4:00
   addSlots(bn, 's_9', 'fri', 4, 11, 'Mid-City');             // 10:00-1:30
 
-  return { version: 1, staff, programs };
+  return { version: 2, staff, programs };
 }
 
 function loadState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      state = JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      // If old version, reset to get new Fall 2026 schedules
+      if (!parsed.version || parsed.version < 2) {
+        state = createDefaultState();
+        saveState();
+        return;
+      }
+      state = parsed;
       // Ensure all programs and terms exist
       for (const [key, prog] of Object.entries(DEFAULT_PROGRAMS)) {
         if (!state.programs[key]) {
@@ -923,17 +930,6 @@ function loadState() {
           }
         }
       }
-      // Merge Fall 2026 default schedules if not yet populated
-      const defaults = createDefaultState();
-      for (const [progKey, defProg] of Object.entries(defaults.programs)) {
-        const defSched = defProg.terms['fall-2026'] && defProg.terms['fall-2026'].schedules;
-        if (!defSched || Object.keys(defSched).length === 0) continue;
-        const curSched = state.programs[progKey].terms['fall-2026'].schedules;
-        if (Object.keys(curSched).length === 0) {
-          state.programs[progKey].terms['fall-2026'].schedules = defSched;
-        }
-      }
-      saveState();
       return;
     }
   } catch(e) { console.error('Load error:', e); }
