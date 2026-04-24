@@ -6,6 +6,7 @@
 <title>Counseling Office Schedule Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
   --bg-primary: #0f172a;
@@ -539,7 +540,7 @@ body {
   <div class="header-actions">
     <button class="btn" onclick="openStaffModal()">Manage Staff</button>
     <button class="btn" onclick="importJSON()">Import JSON</button>
-    <button class="btn" onclick="exportJSON()">Export JSON</button>
+    <button class="btn" onclick="exportExcel()">Export Excel</button>
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
   </div>
 </div>
@@ -654,7 +655,7 @@ body {
 const DAYS = ['mon','tue','wed','thu','fri'];
 const DAY_LABELS = { mon:'Monday', tue:'Tuesday', wed:'Wednesday', thu:'Thursday', fri:'Friday' };
 const DAY_SHORT = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri' };
-const SLOTS_FULL = 22; // 8am-7pm
+const SLOTS_FULL = 25; // 8am-8:30pm (last row labeled 8:00 PM)
 const SLOTS_FRIDAY = 12; // 8am-2pm
 const STORAGE_KEY = 'counseling-schedule-data';
 
@@ -1758,6 +1759,122 @@ function updateStaffColor(id, color) {
 }
 
 // ===== IMPORT / EXPORT =====
+function sanitizeSheetName(name) {
+  return name.replace(/[:\\\/\?\*\[\]]/g, '-').slice(0, 31);
+}
+
+function exportExcel() {
+  if (typeof XLSX === 'undefined') {
+    alert('Excel library failed to load. Check your internet connection and try again.');
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+  const program = state.programs[currentProgram];
+  const termLabel = TERMS[currentTerm].label;
+  const days = getActiveDays();
+  const dayHeaders = days.map(d => DAY_LABELS[d]);
+
+  // Sheet 1: Individual (currently selected staff)
+  const staffId = document.getElementById('staffSelect').value;
+  if (staffId) {
+    const staff = state.staff.find(s => s.id === staffId);
+    const schedule = getSchedule(staffId);
+    const rows = [];
+    rows.push([`${staff.name} (${staff.type}) - ${termLabel}`]);
+    rows.push([`${program.label} | Total: ${calcHours(staffId)} hrs/week`]);
+    rows.push([]);
+    rows.push(['Time', ...dayHeaders, 'Comments']);
+
+    for (let i = 0; i < SLOTS_FULL; i++) {
+      const row = [slotToTime(i)];
+      days.forEach(d => {
+        const max = getMaxSlots(d);
+        if (i >= max) { row.push(''); return; }
+        const slot = schedule.slots[`${d}-${i}`];
+        if (slot) {
+          let t = slot.location;
+          if (slot.remote) t += ' (R)';
+          if (slot.overload) t += ' (OL)';
+          row.push(t);
+        } else {
+          row.push('');
+        }
+      });
+      row.push(i === 0 ? (schedule.comment || '') : '');
+      rows.push(row);
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{ wch: 12 }, ...days.map(() => ({ wch: 22 })), { wch: 30 }];
+    XLSX.utils.book_append_sheet(wb, ws, sanitizeSheetName(`Individual - ${staff.name}`));
+  }
+
+  // Sheet(s): Master by Location (one sheet per location)
+  const coverage = buildCoverageMap();
+  program.locations.forEach(loc => {
+    const rows = [];
+    rows.push([`Master Schedule - ${loc}`]);
+    rows.push([`${program.label} | ${termLabel}`]);
+    rows.push([]);
+    rows.push(['Time', ...dayHeaders]);
+
+    for (let i = 0; i < SLOTS_FULL; i++) {
+      const row = [slotToTime(i)];
+      days.forEach(d => {
+        const max = getMaxSlots(d);
+        if (i >= max) { row.push(''); return; }
+        const entries = (coverage[`${d}-${i}`] || []).filter(e => e.location === loc);
+        const text = entries.map(e => {
+          let n = `${e.staffName} (${e.staffType})`;
+          if (e.remote) n += ' (R)';
+          if (e.overload) n += ' (OL)';
+          return n;
+        }).join(', ');
+        row.push(text);
+      });
+      rows.push(row);
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{ wch: 12 }, ...days.map(() => ({ wch: 32 }))];
+    XLSX.utils.book_append_sheet(wb, ws, sanitizeSheetName(`Master - ${loc}`));
+  });
+
+  // Sheet: All Slots (flat list)
+  const allRows = [['Staff', 'Type', 'Day', 'Time', 'Duration', 'Location', 'Remote', 'Overload', 'Program', 'Term']];
+  const termData = program.terms[currentTerm];
+  for (const [sid, schedule] of Object.entries(termData.schedules || {})) {
+    const staff = state.staff.find(s => s.id === sid);
+    if (!staff) continue;
+    for (const [key, slot] of Object.entries(schedule.slots || {})) {
+      const [day, idxStr] = key.split('-');
+      const idx = parseInt(idxStr);
+      allRows.push([
+        staff.name,
+        staff.type,
+        DAY_LABELS[day] || day,
+        slotToTime(idx),
+        '30 min',
+        slot.location || '',
+        slot.remote ? 'Yes' : '',
+        slot.overload ? 'Yes' : '',
+        program.label,
+        termLabel
+      ]);
+    }
+  }
+  const wsAll = XLSX.utils.aoa_to_sheet(allRows);
+  wsAll['!cols'] = [
+    { wch: 24 }, { wch: 6 }, { wch: 12 }, { wch: 10 }, { wch: 8 },
+    { wch: 22 }, { wch: 8 }, { wch: 10 }, { wch: 28 }, { wch: 14 }
+  ];
+  XLSX.utils.book_append_sheet(wb, wsAll, 'All Slots');
+
+  const fname = `schedule_${currentProgram}_${currentTerm}_${new Date().toISOString().slice(0,10)}.xlsx`;
+  XLSX.writeFile(wb, fname);
+}
+
 function exportJSON() {
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
